@@ -15,10 +15,10 @@ let database: AppDatabase | undefined;
 afterEach(() => database?.close());
 
 describe("order allocation and idempotency", () => {
-  it("allocates unique cent amounts transactionally", () => {
+  it("prefers the requested amount and allocates cent offsets only on conflicts", () => {
     ({ database } = configuredDatabase());
     const orders = [1, 2, 3].map((index) => createOrder(database!, orderInput(index)).order);
-    expect(orders.map((order) => order.payable_amount_cents)).toEqual([101, 102, 103]);
+    expect(orders.map((order) => order.payable_amount_cents)).toEqual([100, 101, 102]);
     expect(new Set(orders.map((order) => order.payable_amount_cents)).size).toBe(3);
   });
 

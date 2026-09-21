@@ -93,7 +93,7 @@ test("first-run setup, key generation, QR upload and public checkout", async ({ 
   const order = JSON.parse(responseText) as { code: number; payurl: string };
   expect(order.code).toBe(1);
   await page.goto(order.payurl);
-  await expect(page.getByRole("heading", { name: "¥1.01" })).toBeVisible({ timeout: 12_000 });
+  await expect(page.getByRole("heading", { name: "¥1.00" })).toBeVisible({ timeout: 12_000 });
   await expect(page.getByAltText("支付宝经营码")).toBeVisible();
 });
 

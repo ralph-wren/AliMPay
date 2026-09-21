@@ -92,7 +92,7 @@ export function createOrder(database: AppDatabase, rawInput: CreateOrderInput): 
     if (collectionMode === "business_qr") {
       const maxOffset = Math.max(1, Math.min(99, getSetting(database, "surcharge_max_cents", 99)));
       let allocated = false;
-      for (let offset = 1; offset <= maxOffset; offset += 1) {
+      for (let offset = 0; offset <= maxOffset; offset += 1) {
         const candidate = input.requestedAmountCents + offset;
         const occupied = database.query("SELECT 1 FROM amount_reservations WHERE amount_cents = ? LIMIT 1").get(candidate);
         if (!occupied) {
