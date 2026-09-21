@@ -59,7 +59,7 @@ describe("shared payment scanner", () => {
     const provider = new FakeProvider();
     const scanner = new PaymentScanner(database, provider);
     await scanner.scanNow();
-    (scanner as unknown as { lastCompletedAt: number }).lastCompletedAt = Date.now() - 2_000;
+    (scanner as unknown as { lastStartedAt: number }).lastStartedAt = Date.now() - 2_000;
 
     setSetting(database, "payment_poll_interval_seconds", 3);
     await scanner.ensureFresh(order);

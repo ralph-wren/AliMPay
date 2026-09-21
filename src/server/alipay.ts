@@ -126,6 +126,7 @@ export interface ScanResult {
 
 export class PaymentScanner {
   private inFlight: Promise<ScanResult> | null = null;
+  private lastStartedAt = 0;
   private lastCompletedAt = 0;
   private timer: ReturnType<typeof setInterval> | null = null;
 
@@ -142,12 +143,12 @@ export class PaymentScanner {
     if (this.timer) return;
     this.timer = setInterval(() => {
       const pollIntervalMs = getPaymentPollIntervalSeconds(this.database) * 1_000;
-      if (getActiveOrders(this.database).length > 0 && Date.now() - this.lastCompletedAt >= pollIntervalMs) {
+      if (getActiveOrders(this.database).length > 0 && Date.now() - this.lastStartedAt >= pollIntervalMs) {
         void this.scanNow("scheduler").catch((error) => {
           console.error(JSON.stringify({ level: "error", event: "scan_failed", message: error instanceof Error ? error.message : String(error) }));
         });
       }
-    }, 1_000);
+    }, 250);
   }
 
   stop() {
@@ -157,7 +158,7 @@ export class PaymentScanner {
 
   async ensureFresh(order: OrderRecord) {
     if (!["pending", "expired"].includes(order.status) || Date.parse(order.monitor_until) <= Date.now()) return;
-    if (Date.now() - this.lastCompletedAt < getPaymentPollIntervalSeconds(this.database) * 1_000) return;
+    if (Date.now() - this.lastStartedAt < getPaymentPollIntervalSeconds(this.database) * 1_000) return;
     await Promise.race([
       this.scanNow("order_query"),
       new Promise<void>((resolve) => setTimeout(resolve, 3_000)),
@@ -166,6 +167,7 @@ export class PaymentScanner {
 
   scanNow(reason = "manual") {
     if (this.inFlight) return this.inFlight;
+    this.lastStartedAt = Date.now();
     this.inFlight = this.performScan(reason).finally(() => {
       this.lastCompletedAt = Date.now();
       this.inFlight = null;
