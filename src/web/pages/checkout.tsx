@@ -27,6 +27,7 @@ export function CheckoutPage() {
   const { token = "" } = useParams();
   const [now, setNow] = useState(Date.now());
   const mobileRedirectAttempted = useRef(false);
+  const returnRedirectAttempted = useRef(false);
   const { data, error, isLoading, mutate } = useSWR<CheckoutData>(`/public-api/checkout/${encodeURIComponent(token)}`, swrFetcher, {
     refreshInterval: (latest) => {
       if (latest && (["paid", "late_paid"].includes(latest.status) || Date.parse(latest.monitor_until) <= Date.now())) return 0;
@@ -73,13 +74,15 @@ export function CheckoutPage() {
 
   useEffect(() => {
     const returnTarget = data?.return_target;
-    if (!returnTarget || !data || !["paid", "late_paid"].includes(data.status)) return;
+    if (
+      returnRedirectAttempted.current ||
+      !returnTarget ||
+      !data ||
+      !["paid", "late_paid"].includes(data.status)
+    ) return;
 
-    const timer = window.setTimeout(() => {
-      window.location.assign(returnTarget);
-    }, 500);
-
-    return () => window.clearTimeout(timer);
+    returnRedirectAttempted.current = true;
+    window.location.replace(returnTarget);
   }, [data?.return_target, data?.status]);
 
   if (isLoading) return <Loading label="正在读取支付订单" />;
